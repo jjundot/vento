@@ -17,6 +17,7 @@ import android.os.VibratorManager;
 import android.text.InputType;
 import android.util.Log;
 import android.view.HapticFeedbackConstants;
+import android.view.InputDevice;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.RoundedCorner;
@@ -775,11 +776,45 @@ public final class SessionView extends View implements ZoomSink, CursorControlle
      */
     @Override
     public boolean dispatchKeyEvent(KeyEvent ev) {
+        if (mouseSideButton(ev)) {
+            return true;
+        }
         captureGesture(ev);
         if (keys.onKeyEvent(ev, this::externalKeyTyped)) {
             return true;
         }
         return super.dispatchKeyEvent(ev);
+    }
+
+    /**
+     * A mouse's side buttons can arrive as Back/Forward key events instead
+     * of motion button state. Back is reserved (it leaves this screen), so a
+     * mouse Back would raise the disconnect prompt; route both to the far
+     * end as the X1/X2 buttons they are. Only mouse-sourced events are
+     * taken — a keyboard's Back keeps its meaning.
+     */
+    private boolean mouseSideButton(KeyEvent ev) {
+        final int button;
+        switch (ev.getKeyCode()) {
+            case KeyEvent.KEYCODE_BACK -> button = MotionEvent.BUTTON_BACK;
+            case KeyEvent.KEYCODE_FORWARD -> button = MotionEvent.BUTTON_FORWARD;
+            default -> {
+                return false;
+            }
+        }
+        if ((ev.getSource() & InputDevice.SOURCE_MOUSE) == 0) {
+            return false;
+        }
+        if (cursorLocal) {
+            return true; // parked with the rest of the physical mouse
+        }
+        switch (ev.getAction()) {
+            case KeyEvent.ACTION_DOWN -> mouse.keyButton(button, true);
+            case KeyEvent.ACTION_UP -> mouse.keyButton(button, false);
+            default -> {
+            }
+        }
+        return true;
     }
 
     /**

@@ -48,6 +48,8 @@ public final class PhysicalMouse {
     private Listener listener;
 
     private int held;                    // its own button source, so nothing else's is lost
+    private int motionButtons;           // the last button state a motion event reported
+    private int keyButtons;              // side buttons delivered as key events instead
     private final WheelSteps wheel;  // the notches not yet worth a click live in here
     private float lastX, lastY;          // the last uncaptured position, to derive deltas from
     private boolean havePosition;
@@ -88,7 +90,27 @@ public final class PhysicalMouse {
      * mask rather than a button.
      */
     public void buttonState(int androidButtons) {
-        final int now = toRfbMask(androidButtons);
+        motionButtons = androidButtons;
+        applyButtons();
+    }
+
+    /**
+     * A side button delivered as a key event (back/forward; see
+     * {@link #buttonState} for the motion delivery). Merged with the
+     * motion-reported state before the same diff, so a chord spanning both
+     * deliveries stays consistent.
+     */
+    public void keyButton(int androidButton, boolean down) {
+        final int updated = down ? keyButtons | androidButton : keyButtons & ~androidButton;
+        if (updated == keyButtons) {
+            return;
+        }
+        keyButtons = updated;
+        applyButtons();
+    }
+
+    private void applyButtons() {
+        final int now = toRfbMask(motionButtons | keyButtons);
         if (now == held) {
             return;
         }
@@ -131,6 +153,7 @@ public final class PhysicalMouse {
      */
     public void cancel() {
         havePosition = false;
+        keyButtons = 0;
         wheel.reset();
         if (held != 0) {
             sink.mouseUp(held);
