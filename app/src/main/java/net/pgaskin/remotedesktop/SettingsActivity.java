@@ -396,7 +396,7 @@ public final class SettingsActivity extends AppCompatToolbarActivity {
             screen.addPreference(switchPref(AppSettings.KEY_IMMERSIVE,
                     R.string.settings_immersive, R.string.settings_immersive_summary, true));
             screen.addPreference(switchPref(AppSettings.KEY_PRIVATE_IME,
-                    R.string.settings_private_ime, R.string.settings_private_ime_summary, true));
+                    R.string.settings_private_ime, R.string.settings_private_ime_summary, false));
             screen.addPreference(switchPref(AppSettings.KEY_MODIFIER_RESETS_IME,
                     R.string.settings_modifier_resets_ime,
                     R.string.settings_modifier_resets_ime_summary, true));

@@ -58,7 +58,7 @@ public final class AppSettings {
         m.put(KEY_HUD, false);
         m.put(KEY_KEEP_AWAKE, true);
         m.put(KEY_IMMERSIVE, true);
-        m.put(KEY_PRIVATE_IME, true);
+        m.put(KEY_PRIVATE_IME, false);
         m.put(KEY_PREVIEWS, true);
         m.put(KEY_LIST_VIEW, true);
         m.put(KEY_MODIFIER_RESETS_IME, true);
