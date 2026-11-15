@@ -17,6 +17,17 @@ plugins {
 // while also making versioning more complicated.
 final shippedAbis = ['arm64-v8a', 'x86_64']
 
+// Materialise the fixed debug keystore (see the signingConfigs note in the
+// android block): it is committed base64-encoded, since a keystore is
+// binary, and decoded here at configuration time, before the debug build
+// type checks for its presence.
+final fixedDebugKeystore = rootProject.file('debug.keystore')
+final fixedDebugKeystoreB64 = rootProject.file('debug.keystore.b64')
+if (!fixedDebugKeystore.exists() && fixedDebugKeystoreB64.exists()) {
+    fixedDebugKeystore.bytes = java.util.Base64.getMimeDecoder()
+            .decode(fixedDebugKeystoreB64.getText('UTF-8'))
+}
+
 android {
     namespace = 'net.pgaskin.remotedesktop'
     compileSdk 36
@@ -56,9 +67,27 @@ android {
         disable 'TypographyDashes'
     }
 
+    // A fixed debug key for this fork, so CI debug builds can be installed
+    // over each other instead of each getting a fresh runner-generated key.
+    // The keystore is binary, so it is committed base64-encoded as
+    // debug.keystore.b64 and decoded at configuration time (see above). The key is
+    // the standard public Android debug credential (password "android"): it
+    // protects nothing, it only gives every CI build the same signature.
+    signingConfigs {
+        fixedDebug {
+            storeFile rootProject.file('debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+    }
+
     buildTypes {
         debug {
             applicationIdSuffix ".debug"
+            if (rootProject.file('debug.keystore').exists()) {
+                signingConfig signingConfigs.fixedDebug
+            }
         }
         release {
             minifyEnabled false
