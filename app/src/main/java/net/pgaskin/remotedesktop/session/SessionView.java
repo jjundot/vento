@@ -25,6 +25,7 @@ import android.view.WindowInsets;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.Toast;
 
 import net.pgaskin.remotedesktop.AppSettings;
 import net.pgaskin.remotedesktop.InputSettings;
@@ -761,10 +762,36 @@ public final class SessionView extends View implements ZoomSink, CursorControlle
      */
     @Override
     public boolean dispatchKeyEvent(KeyEvent ev) {
+        if (isCaptureToggle(ev)) {
+            if (ev.getAction() == KeyEvent.ACTION_DOWN && ev.getRepeatCount() == 0) {
+                togglePointerCapture();
+            }
+            return true;
+        }
         if (keys.onKeyEvent(ev, this::externalKeyTyped)) {
             return true;
         }
         return super.dispatchKeyEvent(ev);
+    }
+
+    /** Ctrl+Alt+Shift+C, the local escape hatch for pointer capture. */
+    private static boolean isCaptureToggle(KeyEvent ev) {
+        return ev.getKeyCode() == KeyEvent.KEYCODE_C
+                && ev.isCtrlPressed() && ev.isAltPressed() && ev.isShiftPressed();
+    }
+
+    /**
+     * Flip pointer capture for this session only; the stored setting, and so
+     * the next session's default, is untouched. Releasing capture frees the
+     * local pointer for the window chrome (e.g. the DeX header's immersive
+     * menu); pressing the shortcut again re-captures.
+     */
+    private void togglePointerCapture() {
+        cfg.mouseCapture = !cfg.mouseCapture;
+        syncPointerCapture();
+        Toast.makeText(getContext(),
+                cfg.mouseCapture ? "Pointer capture on" : "Pointer capture off",
+                Toast.LENGTH_SHORT).show();
     }
 
     @Override

@@ -291,8 +291,8 @@ public final class Config {
      * needs an edge auto-scroll at all.
      */
     public boolean mouseCapture = true;
-    public float mouseSpeed = 1.0f;     // 1.0 is the pointer profile the phone already applied
-    public float mouseWheelStep = 1.0f; // clicks per detent; not wheelStepPx, which is finger travel
+    public float mouseSpeed = 2.5f;     // 1.0 is the pointer profile the phone already applied
+    public float mouseWheelStep = 2.0f; // clicks per detent; not wheelStepPx, which is finger travel
 
     private Config(float density) {
         this.density = density;
