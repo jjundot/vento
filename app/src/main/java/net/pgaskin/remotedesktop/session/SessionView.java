@@ -685,7 +685,7 @@ public final class SessionView extends View implements ZoomSink, CursorControlle
     public boolean onTouchEvent(MotionEvent ev) {
         // An uncaptured mouse with a button down arrives as touch, and must not
         // reach the gesture layer: its buttons are already unambiguous.
-        if (PhysicalMouse.isMouse(ev) && mouse.onTouchEvent(ev)) {
+        if (!cursorLocal && PhysicalMouse.isMouse(ev) && mouse.onTouchEvent(ev)) {
             return true;
         }
         return router.onTouchEvent(ev);
@@ -696,12 +696,18 @@ public final class SessionView extends View implements ZoomSink, CursorControlle
     /** An uncaptured mouse: hovering, and its wheel. */
     @Override
     public boolean onGenericMotionEvent(MotionEvent ev) {
+        if (cursorLocal) {
+            return true;
+        }
         return mouse.onGenericMotionEvent(ev) || super.onGenericMotionEvent(ev);
     }
 
     /** A captured mouse, where the coordinates are already deltas. */
     @Override
     public boolean onCapturedPointerEvent(MotionEvent ev) {
+        if (cursorLocal) {
+            return true;
+        }
         return mouse.onCapturedPointerEvent(ev) || super.onCapturedPointerEvent(ev);
     }
 
@@ -735,11 +741,12 @@ public final class SessionView extends View implements ZoomSink, CursorControlle
             // Held at the far end, as in suspendInput().
             mouse.cancel();
             keys.releaseAll();
+            ctrlAltArmed = false;
         }
     }
 
     private void syncPointerCapture() {
-        if (cfg.mouseCapture && hasWindowFocus() && isFocused()) {
+        if (cfg.mouseCapture && !cursorLocal && hasWindowFocus() && isFocused()) {
             requestPointerCapture();
         } else if (hasPointerCapture()) {
             releasePointerCapture();
@@ -753,6 +760,12 @@ public final class SessionView extends View implements ZoomSink, CursorControlle
 
     // ---- physical keyboard --------------------------------------------------
 
+    /** Set by the Ctrl+Alt gesture: the cursor belongs to the local desktop. */
+    private boolean cursorLocal;
+
+    /** Both Ctrl and Alt are down and nothing else has been pressed since. */
+    private boolean ctrlAltArmed;
+
     /**
      * Every key event the focused session gets. {@link PhysicalKeyboard} refuses
      * the ones this client handles itself (mainly Back, which leaves the
@@ -762,35 +775,59 @@ public final class SessionView extends View implements ZoomSink, CursorControlle
      */
     @Override
     public boolean dispatchKeyEvent(KeyEvent ev) {
-        if (isCaptureToggle(ev)) {
-            if (ev.getAction() == KeyEvent.ACTION_DOWN && ev.getRepeatCount() == 0) {
-                togglePointerCapture();
-            }
-            return true;
-        }
+        captureGesture(ev);
         if (keys.onKeyEvent(ev, this::externalKeyTyped)) {
             return true;
         }
         return super.dispatchKeyEvent(ev);
     }
 
-    /** Ctrl+Alt+Shift+C, the local escape hatch for pointer capture. */
-    private static boolean isCaptureToggle(KeyEvent ev) {
-        return ev.getKeyCode() == KeyEvent.KEYCODE_C
-                && ev.isCtrlPressed() && ev.isAltPressed() && ev.isShiftPressed();
+    /**
+     * Ctrl+Alt tapped on its own — both modifiers down, then released with no
+     * other key in between — switches the cursor between the remote desktop
+     * and the local one. A real Ctrl+Alt+... combination disarms the gesture,
+     * so Ctrl+Alt+Del and friends still reach the far end untouched. The
+     * modifier events themselves are never swallowed: the far end is owed the
+     * releases for the presses it already saw.
+     */
+    private void captureGesture(KeyEvent ev) {
+        switch (ev.getKeyCode()) {
+            case KeyEvent.KEYCODE_CTRL_LEFT, KeyEvent.KEYCODE_CTRL_RIGHT,
+                    KeyEvent.KEYCODE_ALT_LEFT, KeyEvent.KEYCODE_ALT_RIGHT -> {
+                if (ev.getAction() == KeyEvent.ACTION_DOWN) {
+                    if (ev.getRepeatCount() == 0 && ev.isCtrlPressed() && ev.isAltPressed()) {
+                        ctrlAltArmed = true;
+                    }
+                } else if (ev.getAction() == KeyEvent.ACTION_UP && ctrlAltArmed) {
+                    ctrlAltArmed = false;
+                    toggleCursor();
+                }
+            }
+            default -> {
+                if (ev.getAction() == KeyEvent.ACTION_DOWN) {
+                    ctrlAltArmed = false;
+                }
+            }
+        }
     }
 
     /**
-     * Flip pointer capture for this session only; the stored setting, and so
-     * the next session's default, is untouched. Releasing capture frees the
-     * local pointer for the window chrome (e.g. the DeX header's immersive
-     * menu); pressing the shortcut again re-captures.
+     * Remote: pointer capture on (if the setting allows) and mouse motion
+     * drives the remote cursor. Local: capture released and physical-mouse
+     * events swallowed at the entry points above, so the local cursor is
+     * free for the window chrome and the remote cursor stays parked instead
+     * of trailing it as a second cursor. Keyboard input is unaffected either
+     * way, and the stored capture setting (and so the next session's
+     * default) is untouched.
      */
-    private void togglePointerCapture() {
-        cfg.mouseCapture = !cfg.mouseCapture;
+    private void toggleCursor() {
+        cursorLocal = !cursorLocal;
+        if (cursorLocal) {
+            mouse.cancel();
+        }
         syncPointerCapture();
         Toast.makeText(getContext(),
-                cfg.mouseCapture ? "Pointer capture on" : "Pointer capture off",
+                cursorLocal ? "Cursor: local" : "Cursor: remote",
                 Toast.LENGTH_SHORT).show();
     }
 
