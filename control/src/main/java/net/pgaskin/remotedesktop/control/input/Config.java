@@ -292,7 +292,7 @@ public final class Config {
      */
     public boolean mouseCapture = true;
     public float mouseSpeed = 2.5f;     // 1.0 is the pointer profile the phone already applied
-    public float mouseWheelStep = 2.0f; // clicks per detent; not wheelStepPx, which is finger travel
+    public float mouseWheelStep = 0.5f; // detents per click (gearing; lower is faster); not wheelStepPx, which is finger travel
 
     private Config(float density) {
         this.density = density;

@@ -95,6 +95,10 @@ public final class Harness implements ZoomSink, CursorController.PointerSink, Mo
     }
 
     public Harness(Config cfg, int viewW, int viewH) {
+        // The mechanism tests are calibrated at 1.0; this fork ships faster
+        // product defaults, which are not what the tests are about.
+        cfg.mouseSpeed = 1.0f;
+        cfg.mouseWheelStep = 1.0f;
         this.cfg = cfg;
         this.viewW = viewW;
         this.viewH = viewH;
