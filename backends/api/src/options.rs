@@ -376,6 +376,8 @@ pub(crate) const DESKTOP_SIZES: &[Choice] = &[
     choice("1366x768", "1366 × 768"),
     choice("1280x800", "1280 × 800"),
     choice("2560x1440", "2560 × 1440"),
+    choice("2560x1080", "2560 × 1080"),
+    choice("3440x1440", "3440 × 1440"),
 ];
 
 pub(crate) const MONITOR_COUNTS: &[Choice] = &[
