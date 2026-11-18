@@ -370,14 +370,14 @@ pub(crate) const COMPRESSION_LEVELS: &[Choice] = &[
 pub(crate) const DESKTOP_SIZES: &[Choice] = &[
     choice("remote", "Do not change"),
     choice("device", "Match local device"),
+    choice("3440x1440", "3440 × 1440"),
+    choice("2560x1080", "2560 × 1080"),
     choice("1920x1200", "1920 × 1200"),
     choice("1920x1080", "1920 × 1080"),
     choice("1600x1000", "1600 × 1000"),
     choice("1366x768", "1366 × 768"),
     choice("1280x800", "1280 × 800"),
     choice("2560x1440", "2560 × 1440"),
-    choice("2560x1080", "2560 × 1080"),
-    choice("3440x1440", "3440 × 1440"),
 ];
 
 pub(crate) const MONITOR_COUNTS: &[Choice] = &[
