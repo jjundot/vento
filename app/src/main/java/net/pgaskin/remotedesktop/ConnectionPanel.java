@@ -570,6 +570,7 @@ final class ConnectionPanel {
         }
         final int[][] sizes = {
                 {session.backend().desktopWidth(), session.backend().desktopHeight()},
+                {3440, 1440}, {2560, 1080},
                 {1920, 1200}, {1920, 1080}, {1600, 1000},
                 {1366, 768}, {1280, 800}, {2560, 1440},
         };

@@ -118,7 +118,7 @@ public final class InputSettings {
                     "Vibrate when pressing extension keyboard keys.",
                     c -> c.keyboardHaptics, (c, v) -> c.keyboardHaptics = v),
             bool("mouseCapture", "Capture physical mouse",
-                    "Capture the pointer while connected to send relative motion instead of using the local cursor.",
+                    "Capture the pointer while connected to send relative motion instead of using the local cursor. Tap Ctrl+Alt during a session to switch the cursor between the remote desktop and the local one.",
                     c -> c.mouseCapture, (c, v) -> c.mouseCapture = v),
             number("mouseSpeed", "Physical mouse speed",
                     "Multiplier for captured mouse motion.",
